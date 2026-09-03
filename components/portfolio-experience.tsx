@@ -242,6 +242,10 @@ function ProjectGlyph({ title }: { title: string }) {
 
 export function PortfolioExperience({ data }: { data: SiteData }) {
   const { profile, projects, publications } = data;
+  const aboutCopy = profile.longBio
+    .replace(', cloud resilience roadmaps', '')
+    .replace(', and cost transformations', '')
+    .replace('Before consulting', '\n\nPrior to consulting');
   return (
     <main>
       <a className="skip-link" href="#about">
@@ -279,7 +283,7 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
           title="About Me"
         />
         <div className="profile-story profile-story-wide">
-          {profile.longBio.split(/\n\s*\n/).map((paragraph, index) => (
+          {aboutCopy.split(/\n\s*\n/).map((paragraph, index) => (
             <p className="lead" key={paragraph}>
               {index === 0 &&
                 'I help businesses get the most value from the technologies they buy. '}
