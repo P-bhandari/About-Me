@@ -41,8 +41,13 @@ a { color: inherit; text-decoration: none; }
 .start-screen h1 { margin:0; color:var(--paper); font:800 clamp(5.5rem,12vw,11.5rem)/.78 var(--font-sans-custom); letter-spacing:.035em; text-transform:uppercase; text-shadow:0 5px 0 #0a1830,0 12px 30px rgba(0,0,0,.65); }
 .start-screen h1 em { color:var(--coral); font-style:normal; }
 .start-screen>p:nth-of-type(2) { margin:2rem 0 1.5rem; color:#d8dfeb; font-size:.78rem; text-transform:uppercase; letter-spacing:.16em; }
+.play-cta { position:relative; display:flex; justify-content:center; padding-top:2.25rem; }
+.click-here-sign { position:absolute; top:0; left:50%; color:#ffe8ae; font:800 .86rem var(--font-sans-custom); letter-spacing:.04em; white-space:nowrap; text-transform:uppercase; transform:translateX(-50%) rotate(-5deg); text-shadow:2px 2px 0 #091426; animation:signWiggle 1.35s ease-in-out infinite; }
+.click-here-sign span { display:inline-block; margin-left:.2rem; color:var(--cyan); font-size:1.25rem; animation:arrowBounce .72s ease-in-out infinite alternate; }
 .play-button { display:flex; align-items:center; gap:.75rem; padding:.9rem 1.6rem; border:2px solid #fff0cf; background:var(--coral); color:white; cursor:pointer; box-shadow:0 5px 0 #9f3927,0 12px 28px rgba(0,0,0,.35); font:700 .78rem var(--font-display); letter-spacing:.18em; text-transform:uppercase; transition:transform .15s ease,box-shadow .15s ease; }
 .play-button:hover,.play-button:focus-visible { transform:translateY(-2px); box-shadow:0 7px 0 #9f3927,0 16px 32px rgba(0,0,0,.4); }
+@keyframes signWiggle { 0%,100% { transform:translateX(-50%) rotate(-5deg); } 50% { transform:translateX(-50%) rotate(3deg) translateY(-3px); } }
+@keyframes arrowBounce { to { transform:translate(4px,4px) rotate(8deg); } }
 .start-screen small { margin-top:1.4rem; color:#a5b0c1; font-size:.66rem; letter-spacing:.08em; }
 .game-hud { position:absolute; z-index:9; left:clamp(1rem,3vw,2.5rem); top:96px; display:flex; align-items:center; gap:.65rem; padding:.55rem .8rem; border:2px solid rgba(247,231,193,.7); background:rgba(6,15,32,.86); box-shadow:4px 4px 0 rgba(3,7,18,.6); }
 .hud-avatar { display:grid; place-items:center; width:38px; height:38px; background:var(--coral); color:white; font:800 .7rem var(--font-display); }
