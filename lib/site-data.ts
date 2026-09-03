@@ -26,9 +26,8 @@ export const fallbackProfile: Profile = {
 
 export const fallbackProjects: Project[] = [
   { id: 1, title: 'OpenCV Tutorials', summary: 'Annotated C++ implementations of classical image-processing algorithms using OpenCV—an enduring learning resource from an engineering-first chapter.', tags: 'C++, OpenCV, Computer Vision', repoUrl: 'https://github.com/P-bhandari/Opencv-Tutorials', liveUrl: null, imageKey: null, featured: true, sortOrder: 1 },
-  { id: 2, title: 'Stereo Matching', summary: 'Sparse-to-dense stereo matching for depth estimation, with implementations for the KITTI and Middlebury benchmarks.', tags: 'C++, Depth Estimation, KITTI', repoUrl: 'https://github.com/P-bhandari/stereo_matching', liveUrl: null, imageKey: null, featured: true, sortOrder: 2 },
-  { id: 3, title: 'Breast Profile Segmentation', summary: 'Automated region-of-interest detection in digital mammograms, evaluated on the mini-MIAS database with core routines built from scratch.', tags: 'C++, Medical Imaging, Segmentation', repoUrl: 'https://github.com/P-bhandari/Breast_Profile_Segmentation', liveUrl: null, imageKey: null, featured: true, sortOrder: 3 },
-  { id: 4, title: 'Emotion Recognition', summary: 'Facial-expression classification with convolutional neural networks trained on the JAFFE dataset and compared across architectures.', tags: 'Python, CNN, Machine Learning', repoUrl: 'https://github.com/P-bhandari/Emotion-Recognition', liveUrl: null, imageKey: null, featured: true, sortOrder: 4 },
+  { id: 2, title: 'Nutrition Scanner', summary: 'A searchable supplement-label database that separates independently verified certifications from self-asserted claims across more than 117,000 products.', tags: 'React, TypeScript, Data Product', repoUrl: 'https://github.com/P-bhandari/ingredient-scanner', liveUrl: 'https://p-bhandari.github.io/ingredient-scanner/', imageKey: null, featured: true, sortOrder: 2 },
+  { id: 3, title: 'Date Night', summary: 'A weekly date-night planner for Brooklyn and Manhattan with day and borough filters, saveable picks, and instant event plans.', tags: 'Product, Events, New York City', repoUrl: 'https://github.com/P-bhandari/nearby-events', liveUrl: null, imageKey: null, featured: true, sortOrder: 3 },
 ];
 
 export const fallbackPublications: Publication[] = [

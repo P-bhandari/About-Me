@@ -62,6 +62,17 @@ async function initialize(db: D1Database) {
       .bind(item.id, item.title, item.summary, item.tags, item.repoUrl, item.liveUrl, item.imageKey, item.featured ? 1 : 0, item.sortOrder)));
   }
 
+  // One-time reconciliation of the original résumé seed with the focused public portfolio.
+  await db.batch([
+    db.prepare(`DELETE FROM projects WHERE title IN ('Stereo Matching', 'Breast Profile Segmentation', 'Emotion Recognition')`),
+    db.prepare(`INSERT INTO projects (title, summary, tags, repo_url, live_url, image_key, featured, sort_order)
+      SELECT ?, ?, ?, ?, ?, NULL, 1, 2 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE title = ?)`)
+      .bind('Nutrition Scanner', 'A searchable supplement-label database that separates independently verified certifications from self-asserted claims across more than 117,000 products.', 'React, TypeScript, Data Product', 'https://github.com/P-bhandari/ingredient-scanner', 'https://p-bhandari.github.io/ingredient-scanner/', 'Nutrition Scanner'),
+    db.prepare(`INSERT INTO projects (title, summary, tags, repo_url, live_url, image_key, featured, sort_order)
+      SELECT ?, ?, ?, ?, NULL, NULL, 1, 3 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE title = ?)`)
+      .bind('Date Night', 'A weekly date-night planner for Brooklyn and Manhattan with day and borough filters, saveable picks, and instant event plans.', 'Product, Events, New York City', 'https://github.com/P-bhandari/nearby-events', 'Date Night'),
+  ]);
+
   const publicationCount = await db.prepare('SELECT COUNT(*) AS count FROM publications').first<{ count: number }>();
   if (!publicationCount?.count) {
     await db.batch(fallbackPublications.map((item) => db.prepare(`INSERT INTO publications
