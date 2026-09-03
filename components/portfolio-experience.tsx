@@ -134,7 +134,7 @@ function AtlasNavigation() {
             <br />
             <em>Bhandari</em>
           </h1>
-          <p>Punjabi</p>
+          <p>About Me</p>
           <div className="play-cta">
             <span className="click-here-sign" aria-hidden="true">
               Click here! <span>↘</span>
