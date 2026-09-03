@@ -27,7 +27,7 @@ export const fallbackProfile: Profile = {
 export const fallbackProjects: Project[] = [
   { id: 1, title: 'OpenCV Tutorials', summary: 'Annotated C++ implementations of classical image-processing algorithms using OpenCV—an enduring learning resource from an engineering-first chapter.', tags: 'C++, OpenCV, Computer Vision', repoUrl: 'https://github.com/P-bhandari/Opencv-Tutorials', liveUrl: null, imageKey: null, featured: true, sortOrder: 1 },
   { id: 2, title: 'Nutrition Scanner', summary: 'A searchable supplement-label database that separates independently verified certifications from self-asserted claims across more than 117,000 products.', tags: 'React, TypeScript, Data Product', repoUrl: 'https://github.com/P-bhandari/ingredient-scanner', liveUrl: 'https://p-bhandari.github.io/ingredient-scanner/', imageKey: null, featured: true, sortOrder: 2 },
-  { id: 3, title: 'Date Night', summary: 'A weekly date-night planner for Brooklyn and Manhattan with day and borough filters, saveable picks, and instant event plans.', tags: 'Product, Events, New York City', repoUrl: 'https://github.com/P-bhandari/nearby-events', liveUrl: null, imageKey: null, featured: true, sortOrder: 3 },
+  { id: 3, title: 'Date Night', summary: 'A weekly date-night planner for Brooklyn and Manhattan with day and borough filters, saveable picks, and instant event plans.', tags: 'Product, Events, New York City', repoUrl: 'https://github.com/P-bhandari/nearby-events', liveUrl: 'https://nearby-events.bhandaripiyush5.chatgpt.site', imageKey: null, featured: true, sortOrder: 3 },
 ];
 
 export const fallbackPublications: Publication[] = [

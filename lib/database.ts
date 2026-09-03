@@ -69,8 +69,10 @@ async function initialize(db: D1Database) {
       SELECT ?, ?, ?, ?, ?, NULL, 1, 2 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE title = ?)`)
       .bind('Nutrition Scanner', 'A searchable supplement-label database that separates independently verified certifications from self-asserted claims across more than 117,000 products.', 'React, TypeScript, Data Product', 'https://github.com/P-bhandari/ingredient-scanner', 'https://p-bhandari.github.io/ingredient-scanner/', 'Nutrition Scanner'),
     db.prepare(`INSERT INTO projects (title, summary, tags, repo_url, live_url, image_key, featured, sort_order)
-      SELECT ?, ?, ?, ?, NULL, NULL, 1, 3 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE title = ?)`)
-      .bind('Date Night', 'A weekly date-night planner for Brooklyn and Manhattan with day and borough filters, saveable picks, and instant event plans.', 'Product, Events, New York City', 'https://github.com/P-bhandari/nearby-events', 'Date Night'),
+      SELECT ?, ?, ?, ?, ?, NULL, 1, 3 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE title = ?)`)
+      .bind('Date Night', 'A weekly date-night planner for Brooklyn and Manhattan with day and borough filters, saveable picks, and instant event plans.', 'Product, Events, New York City', 'https://github.com/P-bhandari/nearby-events', 'https://nearby-events.bhandaripiyush5.chatgpt.site', 'Date Night'),
+    db.prepare(`UPDATE projects SET live_url = ? WHERE title = 'Date Night'`)
+      .bind('https://nearby-events.bhandaripiyush5.chatgpt.site'),
   ]);
 
   const publicationCount = await db.prepare('SELECT COUNT(*) AS count FROM publications').first<{ count: number }>();

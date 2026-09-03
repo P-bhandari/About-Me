@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   ArrowDown, ArrowUpRight, BookOpen, BriefcaseBusiness,
   ExternalLink, GitBranch, GraduationCap, Mail,
-  Satellite, Sparkles, Gamepad2, Volume2,
+  Sparkles, Gamepad2, Volume2, Aperture, Pill, Wine,
 } from 'lucide-react';
 import type { SiteData } from '@/lib/site-data';
 
@@ -81,6 +81,12 @@ function SectionHead({ number, place, title, dark = false }: { number: string; p
   return <div className="section-heading"><div className="section-number">{number}</div><div><p className={`eyebrow ${dark ? '' : 'dark'}`}><span /> {place}</p><h2>{title}</h2></div></div>;
 }
 
+function ProjectGlyph({ title }: { title: string }) {
+  if (title === 'Nutrition Scanner') return <Pill size={64} strokeWidth={1.5} />;
+  if (title === 'Date Night') return <span className="project-toast"><Wine size={54} strokeWidth={1.5} /><Wine size={54} strokeWidth={1.5} /></span>;
+  return <Aperture size={68} strokeWidth={1.4} />;
+}
+
 export function PortfolioExperience({ data }: { data: SiteData }) {
   const { profile, projects, publications } = data;
   return <main>
@@ -91,12 +97,12 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
       <a className="world-scroll" href="#about"><span>Continue to portfolio</span><ArrowDown size={16} aria-hidden="true" /></a>
     </section>
 
-    <section className="content-section profile-section" id="about"><SectionHead number="01 / ABOUT ME" place="The Studio" title="From engineering systems to shaping enterprises." /><div className="profile-story profile-story-wide"><p className="lead">{profile.longBio}</p><div className="credentials"><span><GraduationCap size={18}/> Wharton MBA</span><span><Sparkles size={18}/> GenAI leader</span><span><GitBranch size={18}/> Builder at heart</span></div></div>
+    <section className="content-section profile-section" id="about"><SectionHead number="01 / ABOUT ME" place="The Studio" title="Helping businesses get the most value from the technology they buy." /><div className="profile-story profile-story-wide"><p className="lead">I help enterprises turn technology investments into practical business value. {profile.longBio}</p><div className="credentials"><span><GraduationCap size={18}/> Wharton MBA</span><span><Sparkles size={18}/> GenAI leader</span><span><GitBranch size={18}/> Builder at heart</span></div></div>
       <div className="experience-list">{experience.map((item, index) => <article className="experience-row" key={item.years}><span className="experience-index">0{index+1}</span><span className="experience-years">{item.years}</span><div><p className="role">{item.role}</p><h3>{item.company}</h3><p>{item.detail}</p></div></article>)}</div>
       <div className="education-grid">{education.map((item) => <article key={item.school}><GraduationCap size={24}/><span>{item.years}</span><h3>{item.school}</h3><p>{item.degree}</p><small>{item.note}</small></article>)}</div>
     </section>
 
-    <section className="content-section dark-section" id="work"><SectionHead dark number="02 / GITHUB" place="The Workshop" title="Apps and experiments built to be used." /><div className="project-grid">{projects.filter((p) => p.featured).map((project, index) => { const destination = project.liveUrl || project.repoUrl; return <article className="project-card" key={project.id}><div className={`project-visual visual-${index % 4}`}><Satellite size={42}/><span>0{index+1}</span></div><div className="project-copy"><div className="card-meta"><span>{project.tags.split(',')[0]}</span><span>BUILD / {String(project.sortOrder).padStart(2,'0')}</span></div><h3>{project.title}</h3><p>{project.summary}</p><div className="tags">{project.tags.split(',').map((tag) => <span key={tag}>{tag.trim()}</span>)}</div>{destination && <a href={destination} target="_blank" rel="noreferrer">{project.liveUrl ? 'Open live app' : 'View on GitHub'} <ArrowUpRight size={16}/></a>}</div></article>; })}</div><a className="section-link light" href={profile.githubUrl} target="_blank" rel="noreferrer"><GitBranch size={18}/> Explore all work on GitHub <ArrowUpRight size={16}/></a></section>
+    <section className="content-section dark-section" id="work"><SectionHead dark number="02 / GITHUB" place="The Workshop" title="My Apps and Experiments" /><div className="project-grid">{projects.filter((p) => p.featured).map((project, index) => { const destination = project.liveUrl || project.repoUrl; return <article className="project-card" key={project.id}><div className={`project-visual visual-${index % 4}`}><span className="project-glyph"><ProjectGlyph title={project.title} /></span><span>0{index+1}</span></div><div className="project-copy"><div className="card-meta"><span>{project.tags.split(',')[0]}</span><span>BUILD / {String(project.sortOrder).padStart(2,'0')}</span></div><h3>{project.title}</h3><p>{project.summary}</p><div className="tags">{project.tags.split(',').map((tag) => <span key={tag}>{tag.trim()}</span>)}</div>{destination && <a href={destination} target="_blank" rel="noreferrer">{project.liveUrl ? 'Open live app' : 'View on GitHub'} <ArrowUpRight size={16}/></a>}</div></article>; })}</div><a className="section-link light" href={profile.githubUrl} target="_blank" rel="noreferrer"><GitBranch size={18}/> Explore all work on GitHub <ArrowUpRight size={16}/></a></section>
 
     <section className="content-section research-section" id="research"><div className="publication-heading"><SectionHead number="03 / PUBLICATIONS" place="The Library" title="Publications" /><a className="scholar-title-link" href={profile.scholarUrl} target="_blank" rel="noreferrer"><BookOpen size={18}/> View on Google Scholar <ArrowUpRight size={16}/></a></div><div className="publication-list">{publications.map((pub, index) => <a className="publication-row" href={pub.url} target="_blank" rel="noreferrer" key={pub.id}><span className="pub-index">0{index+1}</span><span className="pub-year">{pub.year}</span><div><span className="pub-venue">{pub.venue}</span><h3>{pub.title}</h3><p>{pub.authors}</p></div><ArrowUpRight size={20}/></a>)}</div></section>
 
