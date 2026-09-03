@@ -279,10 +279,13 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
           title="About Me"
         />
         <div className="profile-story profile-story-wide">
-          <p className="lead">
-            I help businesses get the most value from the technologies they
-            buy. {profile.longBio}
-          </p>
+          {profile.longBio.split(/\n\s*\n/).map((paragraph, index) => (
+            <p className="lead" key={paragraph}>
+              {index === 0 &&
+                'I help businesses get the most value from the technologies they buy. '}
+              {paragraph}
+            </p>
+          ))}
           <div className="credentials">
             <span>
               <GraduationCap size={18} /> Wharton MBA

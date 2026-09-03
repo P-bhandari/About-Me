@@ -110,6 +110,7 @@ button { font: inherit; }
 .profile-portrait img { position:relative; z-index:1; display:block; width:100%; aspect-ratio:4/5; object-fit:cover; filter: saturate(.65) contrast(1.06); background:#d8cfba; }
 .portrait-tag { position:absolute; z-index:2; bottom:-18px; right:-18px; background:var(--coral); color:white; padding:.75rem 1rem; text-transform:uppercase; letter-spacing:.1em; font-size:.65rem; }
 .profile-story { align-self:center; max-width:720px; }.profile-story-wide { max-width:980px; margin-left:auto; }.profile-story .lead { font-size:clamp(1.15rem,2.1vw,1.72rem); line-height:1.55; letter-spacing:-.015em; }
+.profile-story .lead + .lead { margin-top:1.4rem; }
 .experience-list { margin-top: clamp(6rem,10vw,10rem); border-top:1px solid #bdb299; }
 .experience-row { display:grid; grid-template-columns:60px 130px minmax(0,1fr); gap:1.5rem; align-items:start; padding:2.4rem 0; border-bottom:1px solid #c9bea7; }
 .experience-index,.experience-years { color:#66695f; font:650 .88rem var(--font-display); letter-spacing:.11em; }.experience-years { padding-top:.15rem; }.experience-row h3 { margin:.32rem 0 .9rem; font:650 clamp(1.9rem,2.8vw,2.7rem) var(--font-display); letter-spacing:-.035em; }.experience-row .role { margin:0; color:#9a4d3b; font-size:1rem; font-weight:650; text-transform:uppercase; letter-spacing:.11em; }.experience-row div > p:last-child { max-width:760px; margin:0; color:#555b69; font-size:1.05rem; line-height:1.7; }

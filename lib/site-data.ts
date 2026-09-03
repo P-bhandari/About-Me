@@ -18,7 +18,7 @@ export const exerciseLabels: Record<Exercise, string> = {
 export const fallbackProfile: Profile = {
   id: 1, name: 'Piyush Bhandari', tagline: 'Product, AI & Technology Leader',
   shortBio: 'Project Leader at BCG working on getting AI systems into production inside large organizations. Wharton MBA, former Samsung product manager and engineer, and lifelong builder.',
-  longBio: 'I work at the intersection of enterprise AI, product strategy, and technology transformation. At BCG, I have led GenAI deployments, developer-productivity programs, cloud resilience roadmaps, go-to-market operating models, and cost transformations. Before consulting, I built products and platforms at Samsung—from AI-powered television discovery to cloud governance across Korea, China, and India. My foundation is engineering, and I still build the tools I use.',
+  longBio: 'I work at the intersection of enterprise AI, product strategy, and technology transformation. At BCG, I have led GenAI deployments, developer-productivity programs, and go-to-market operating models.\n\nPrior to consulting, I built products and platforms at Samsung—from AI-powered television discovery to cloud governance across Korea, China, and India. My foundation is engineering, and I still build the tools I use.',
   location: 'Williamsburg, NYC (open to relocation)', email: 'piyush1995bhandari@gmail.com', phone: '267-746-6725',
   githubUrl: 'https://github.com/P-bhandari', scholarUrl: 'https://scholar.google.com/citations?user=8VfF1kEAAAAJ&hl=en',
   linkedinUrl: 'https://www.linkedin.com/in/piyush-bhandari95/', profileImageKey: null, updatedAt: '2026-08-11T00:00:00.000Z',
