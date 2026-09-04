@@ -693,12 +693,6 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
               Publications
             </a>
           </div>
-          <a
-            className={`signal-link ${activeSection === 'contact' ? 'active' : ''}`}
-            href={`mailto:${profile.email}`}
-          >
-            Contact me <span aria-hidden="true">↗</span>
-          </a>
         </nav>
         <AtlasNavigation />
         <a className="world-scroll" href="#about">
