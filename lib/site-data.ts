@@ -1,9 +1,10 @@
+import { projectCatalog } from './project-catalog';
 export type Profile = {
   id: number; name: string; tagline: string; shortBio: string; longBio: string;
   location: string; email: string; phone: string | null; githubUrl: string;
   scholarUrl: string; linkedinUrl: string | null; profileImageKey: string | null; updatedAt: string;
 };
-export type Project = { id: number; title: string; summary: string; tags: string; repoUrl: string | null; liveUrl: string | null; imageKey: string | null; featured: boolean; sortOrder: number };
+export type Project = { id: number; title: string; summary: string; tags: string; repoUrl: string | null; liveUrl: string | null; imageKey: string | null; featured: boolean; published: boolean; archived: boolean; sortOrder: number };
 export type Publication = { id: number; title: string; authors: string; venue: string; year: number; summary: string; url: string; imageKey: string | null; sortOrder: number };
 export type Place = { id: number; city: string; country: string; latitude: number; longitude: number; year: number | null; note: string | null; sortOrder: number };
 export type Exercise = 'bench-press' | 'back-squat' | 'overhead-press' | 'push-ups';
@@ -24,11 +25,7 @@ export const fallbackProfile: Profile = {
   linkedinUrl: 'https://www.linkedin.com/in/piyush-bhandari95/', profileImageKey: null, updatedAt: '2026-08-11T00:00:00.000Z',
 };
 
-export const fallbackProjects: Project[] = [
-  { id: 1, title: 'OpenCV Tutorials', summary: 'Annotated C++ implementations of classical image-processing algorithms using OpenCV—an enduring learning resource from an engineering-first chapter.', tags: 'C++, OpenCV, Computer Vision', repoUrl: 'https://github.com/P-bhandari/Opencv-Tutorials', liveUrl: null, imageKey: null, featured: true, sortOrder: 1 },
-  { id: 2, title: 'Nutrition Scanner', summary: 'A searchable supplement-label database that separates independently verified certifications from self-asserted claims across more than 117,000 products.', tags: 'React, TypeScript, Data Product', repoUrl: 'https://github.com/P-bhandari/ingredient-scanner', liveUrl: 'https://p-bhandari.github.io/ingredient-scanner/', imageKey: null, featured: true, sortOrder: 2 },
-  { id: 3, title: 'Date Night', summary: 'A weekly date-night planner for Brooklyn and Manhattan with day and borough filters, saveable picks, and instant event plans.', tags: 'Product, Events, New York City', repoUrl: 'https://github.com/P-bhandari/nearby-events', liveUrl: 'https://nearby-events.bhandaripiyush5.chatgpt.site', imageKey: null, featured: true, sortOrder: 3 },
-];
+export const fallbackProjects: Project[] = projectCatalog;
 
 export const fallbackPublications: Publication[] = [
   { id: 1, title: 'A Novel Krawtchouk Moment Zonal Feature Descriptor for User-independent Static Hand Gesture Recognition', authors: 'Subhamoy Chatterjee, Piyush Bhandari, Maheshkumar H. Kolekar', venue: 'IEEE TENCON', year: 2016, summary: 'A computer-vision method for recognizing static hand gestures across users.', url: 'https://ieeexplore.ieee.org/document/7848027', imageKey: null, sortOrder: 1 },
@@ -38,3 +35,10 @@ export const fallbackPublications: Publication[] = [
 ];
 
 export const fallbackData: SiteData = { profile: fallbackProfile, projects: fallbackProjects, publications: fallbackPublications, places: [], lifts: [] };
+
+export type PublicProfile = Pick<Profile, 'name' | 'tagline' | 'shortBio' | 'longBio' | 'email' | 'githubUrl' | 'scholarUrl' | 'linkedinUrl'>;
+export type PublicSiteData = { profile: PublicProfile; projects: Project[]; publications: Publication[] };
+export function toPublicProfile(profile: Profile): PublicProfile {
+  const { name, tagline, shortBio, longBio, email, githubUrl, scholarUrl, linkedinUrl } = profile;
+  return { name, tagline, shortBio, longBio, email, githubUrl, scholarUrl, linkedinUrl };
+}

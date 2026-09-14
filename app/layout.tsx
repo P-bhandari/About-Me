@@ -6,7 +6,8 @@ const sans = DM_Sans({ variable: '--font-sans-custom', subsets: ['latin'] });
 const display = Space_Grotesk({ variable: '--font-display', subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.SITE_URL ?? 'http://localhost:3000'),
+  icons: { icon: '/favicon.svg' },
+  metadataBase: new URL(process.env.SITE_URL ?? 'https://piyushbhandari.bhandaripiyush5.chatgpt.site'),
   title: 'Piyush Bhandari — Product, AI & Technology Leader',
   description:
     'The personal atlas of Piyush Bhandari: product leadership, enterprise AI, technology transformation, research, and the systems behind the work.',

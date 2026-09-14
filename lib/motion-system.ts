@@ -17,7 +17,7 @@ export const revealGroup: Variants = {
 };
 
 export const revealItem: Variants = {
-  hidden: { opacity: 0, y: 38, filter: 'blur(8px)' },
+  hidden: { opacity: 1, y: 0, filter: 'blur(0px)' },
   visible: {
     opacity: 1,
     y: 0,
@@ -27,7 +27,7 @@ export const revealItem: Variants = {
 };
 
 export const slideReveal: Variants = {
-  hidden: { opacity: 0, x: -34 },
+  hidden: { opacity: 1, x: 0 },
   visible: (index = 0) => ({
     opacity: 1,
     x: 0,

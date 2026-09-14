@@ -1,3 +1,5 @@
+import { projectMigrationSql } from './project-migration';
+import { toPublicProfile, type PublicSiteData } from './site-data';
 import { env } from 'cloudflare:workers';
 import { fallbackProfile, fallbackProjects, fallbackPublications, type SiteData } from './site-data';
 
@@ -10,12 +12,13 @@ export function getDatabase(): D1Database {
 
 export async function ensureDatabase() {
   if (schemaReady) return schemaReady;
-  schemaReady = initialize(getDatabase());
+  schemaReady = initialize(getDatabase()).catch(error => { schemaReady = null; throw error; });
   return schemaReady;
 }
 
 async function initialize(db: D1Database) {
   await db.batch([
+    db.prepare('CREATE TABLE IF NOT EXISTS site_content_migrations (name TEXT PRIMARY KEY NOT NULL)'),
     db.prepare(`CREATE TABLE IF NOT EXISTS profiles (
       id INTEGER PRIMARY KEY, name TEXT NOT NULL, tagline TEXT NOT NULL,
       short_bio TEXT NOT NULL, long_bio TEXT NOT NULL, location TEXT NOT NULL,
@@ -26,7 +29,7 @@ async function initialize(db: D1Database) {
     db.prepare(`CREATE TABLE IF NOT EXISTS projects (
       id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, summary TEXT NOT NULL,
       tags TEXT NOT NULL, repo_url TEXT, live_url TEXT, image_key TEXT,
-      featured INTEGER NOT NULL DEFAULT 1, sort_order INTEGER NOT NULL DEFAULT 0
+      featured INTEGER NOT NULL DEFAULT 1, published INTEGER NOT NULL DEFAULT 1, archived INTEGER NOT NULL DEFAULT 0, sort_order INTEGER NOT NULL DEFAULT 0
     )`),
     db.prepare(`CREATE TABLE IF NOT EXISTS publications (
       id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, authors TEXT NOT NULL,
@@ -54,26 +57,8 @@ async function initialize(db: D1Database) {
       fallbackProfile.location, fallbackProfile.email, fallbackProfile.phone, fallbackProfile.githubUrl,
       fallbackProfile.scholarUrl, fallbackProfile.linkedinUrl, fallbackProfile.profileImageKey, fallbackProfile.updatedAt).run();
 
-  const projectCount = await db.prepare('SELECT COUNT(*) AS count FROM projects').first<{ count: number }>();
-  if (!projectCount?.count) {
-    await db.batch(fallbackProjects.map((item) => db.prepare(`INSERT INTO projects
-      (id, title, summary, tags, repo_url, live_url, image_key, featured, sort_order)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(item.id, item.title, item.summary, item.tags, item.repoUrl, item.liveUrl, item.imageKey, item.featured ? 1 : 0, item.sortOrder)));
-  }
-
-  // One-time reconciliation of the original résumé seed with the focused public portfolio.
-  await db.batch([
-    db.prepare(`DELETE FROM projects WHERE title IN ('Stereo Matching', 'Breast Profile Segmentation', 'Emotion Recognition')`),
-    db.prepare(`INSERT INTO projects (title, summary, tags, repo_url, live_url, image_key, featured, sort_order)
-      SELECT ?, ?, ?, ?, ?, NULL, 1, 2 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE title = ?)`)
-      .bind('Nutrition Scanner', 'A searchable supplement-label database that separates independently verified certifications from self-asserted claims across more than 117,000 products.', 'React, TypeScript, Data Product', 'https://github.com/P-bhandari/ingredient-scanner', 'https://p-bhandari.github.io/ingredient-scanner/', 'Nutrition Scanner'),
-    db.prepare(`INSERT INTO projects (title, summary, tags, repo_url, live_url, image_key, featured, sort_order)
-      SELECT ?, ?, ?, ?, ?, NULL, 1, 3 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE title = ?)`)
-      .bind('Date Night', 'A weekly date-night planner for Brooklyn and Manhattan with day and borough filters, saveable picks, and instant event plans.', 'Product, Events, New York City', 'https://github.com/P-bhandari/nearby-events', 'https://nearby-events.bhandaripiyush5.chatgpt.site', 'Date Night'),
-    db.prepare(`UPDATE projects SET live_url = ? WHERE title = 'Date Night'`)
-      .bind('https://nearby-events.bhandaripiyush5.chatgpt.site'),
-  ]);
+  const catalogApplied = await db.prepare("SELECT name FROM site_content_migrations WHERE name = 'portfolio-catalog-2026-09-14'").first();
+  if (!catalogApplied) await db.batch(projectMigrationSql.map(sql => db.prepare(sql)));
 
   const publicationCount = await db.prepare('SELECT COUNT(*) AS count FROM publications').first<{ count: number }>();
   if (!publicationCount?.count) {
@@ -93,7 +78,7 @@ export async function loadSiteData(): Promise<SiteData> {
       github_url AS githubUrl, scholar_url AS scholarUrl, linkedin_url AS linkedinUrl,
       profile_image_key AS profileImageKey, updated_at AS updatedAt FROM profiles WHERE id = 1`).first(),
     db.prepare(`SELECT id, title, summary, tags, repo_url AS repoUrl, live_url AS liveUrl, image_key AS imageKey,
-      featured, sort_order AS sortOrder FROM projects ORDER BY sort_order, id`).all(),
+      featured, published, archived, sort_order AS sortOrder FROM projects ORDER BY sort_order, id`).all(),
     db.prepare(`SELECT id, title, authors, venue, year, summary, url, image_key AS imageKey,
       sort_order AS sortOrder FROM publications ORDER BY sort_order, id`).all(),
     db.prepare(`SELECT id, city, country, latitude, longitude, year, note, sort_order AS sortOrder
@@ -103,7 +88,7 @@ export async function loadSiteData(): Promise<SiteData> {
   ]);
   return {
     profile: profile as SiteData['profile'],
-    projects: projects.results.map((item: any) => ({ ...item, featured: Boolean(item.featured) })) as SiteData['projects'],
+    projects: projects.results.map((item: any) => ({ ...item, featured: Boolean(item.featured), published: Boolean(item.published), archived: Boolean(item.archived) })) as SiteData['projects'],
     publications: publications.results as SiteData['publications'],
     places: places.results as SiteData['places'],
     lifts: lifts.results as SiteData['lifts'],
@@ -116,4 +101,31 @@ export async function loadSiteDataSafe(): Promise<SiteData> {
 
 function fallbackDataClone(): SiteData {
   return { profile: { ...fallbackProfile }, projects: fallbackProjects.map((x) => ({ ...x })), publications: fallbackPublications.map((x) => ({ ...x })), places: [], lifts: [] };
+}
+
+// Public rendering never queries or serializes private profile, travel, or fitness records.
+export async function loadPublicSiteDataSafe(): Promise<PublicSiteData> {
+  try {
+    await ensureDatabase();
+    const db = getDatabase();
+    const [profile, projects, publications] = await Promise.all([
+      db.prepare(`SELECT name, tagline, short_bio AS shortBio, long_bio AS longBio, email,
+        github_url AS githubUrl, scholar_url AS scholarUrl, linkedin_url AS linkedinUrl
+        FROM profiles WHERE id = 1`).first(),
+      db.prepare(`SELECT id, title, summary, tags, repo_url AS repoUrl, live_url AS liveUrl,
+        image_key AS imageKey, featured, published, archived, sort_order AS sortOrder
+        FROM projects WHERE published = 1 ORDER BY sort_order, id`).all(),
+      db.prepare(`SELECT id, title, authors, venue, year, summary, url, image_key AS imageKey,
+        sort_order AS sortOrder FROM publications ORDER BY sort_order, id`).all(),
+    ]);
+    return {
+      profile: (profile ?? toPublicProfile(fallbackProfile)) as PublicSiteData['profile'],
+      projects: projects.results.map((item: any) => ({ ...item, featured: Boolean(item.featured), published: Boolean(item.published), archived: Boolean(item.archived) })),
+      publications: publications.results as PublicSiteData['publications'],
+    };
+  } catch (error) {
+    console.error('Public portfolio data unavailable', error instanceof Error ? error.message : 'Unknown error');
+    // Do not resurrect owner-hidden projects when their current visibility cannot be read.
+    return { profile: toPublicProfile(fallbackProfile), projects: [], publications: fallbackPublications };
+  }
 }

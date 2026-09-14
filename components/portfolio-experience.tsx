@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import {
   AnimatePresence,
   motion,
@@ -30,7 +29,7 @@ import {
   VolumeX,
   Wine,
 } from 'lucide-react';
-import type { Project, SiteData } from '@/lib/site-data';
+import type { Project, PublicSiteData } from '@/lib/site-data';
 import { playCinematicSound } from '@/lib/cinematic-sound';
 import {
   cinematicEase,
@@ -97,7 +96,7 @@ const atlasDestinations = [
   },
   {
     href: '#work',
-    label: 'GitHub',
+    label: 'Apps',
     detail: 'Apps & experiments',
     icon: GitBranch,
     x: 51,
@@ -134,18 +133,15 @@ const particles = Array.from({ length: 18 }, (_, index) => ({
   duration: `${4.2 + (index % 5) * 0.65}s`,
 }));
 
-const wait = (milliseconds: number) =>
-  new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
-function AtlasNavigation() {
+function AtlasNavigation({ tagline }: { tagline: string }) {
   const reducedMotion = useReducedMotion();
   const [started, setStarted] = useState(false);
   const [moving, setMoving] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(() =>
-    typeof window === 'undefined'
-      ? true
-      : window.localStorage.getItem('atlas-sound') !== 'muted',
-  );
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  useEffect(() => {
+    try { setSoundEnabled(window.localStorage.getItem('atlas-sound') === 'on'); } catch { /* Storage is optional. */ }
+  }, []);
   const [trail, setTrail] = useState<string | null>(null);
   const [arrival, setArrival] = useState<{
     x: number;
@@ -189,7 +185,7 @@ function AtlasNavigation() {
       });
   }, [playerControls, started]);
   const sound = (cue: Parameters<typeof playCinematicSound>[0]) => {
-    if (soundEnabled) playCinematicSound(cue);
+    try { if (soundEnabled) playCinematicSound(cue); } catch { /* Sound is optional. */ }
   };
 
   function begin() {
@@ -199,60 +195,43 @@ function AtlasNavigation() {
   function toggleSound() {
     const next = !soundEnabled;
     setSoundEnabled(next);
-    window.localStorage.setItem('atlas-sound', next ? 'on' : 'muted');
+    try { window.localStorage.setItem('atlas-sound', next ? 'on' : 'muted'); } catch { /* Storage is optional. */ }
     if (next) playCinematicSound('tick');
   }
 
   async function visit(destination: (typeof atlasDestinations)[number]) {
     if (moving) return;
-    sound('tick');
-    if (reducedMotion) {
-      if ('external' in destination && destination.external)
+    const navigate = () => {
+      if ('external' in destination && destination.external) {
         window.location.assign(destination.href);
-      else document.querySelector(destination.href)?.scrollIntoView();
-      return;
-    }
+      } else {
+        document.querySelector(destination.href)?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' });
+        window.history.replaceState(null, '', destination.href);
+      }
+    };
+    if (reducedMotion) { navigate(); return; }
     setMoving(true);
     setFocus(destination);
     const route = curvedTravel(currentPlayer.current, destination);
     setTrail(route.path);
-    const footstep = soundEnabled
-      ? window.setInterval(() => playCinematicSound('step'), 190)
-      : null;
-    await playerControls.start({
-      left: route.x,
-      top: route.y,
-      transition: {
-        duration: motionTiming.travel,
-        times: [0, 0.5, 1],
-        ease: cinematicEase,
-      },
-    });
-    if (footstep) window.clearInterval(footstep);
-    currentPlayer.current = { x: destination.x, y: destination.y };
-    setTrail(null);
-    setArrival({
-      x: destination.x,
-      y: destination.y,
-      label: destination.label,
-    });
-    sound('arrive');
-    await wait(260);
-    setTransitioning(true);
-    sound('whoosh');
-    await wait(280);
-    if ('external' in destination && destination.external) {
-      window.location.assign(destination.href);
-      return;
+    let footstep: number | null = null;
+    let timeout: number | undefined;
+    try {
+      sound('tick');
+      if (soundEnabled) footstep = window.setInterval(() => playCinematicSound('step'), 190);
+      await Promise.race([
+        playerControls.start({ left: route.x, top: route.y, transition: { duration: motionTiming.travel, times: [0, 0.5, 1], ease: cinematicEase } }),
+        new Promise<void>(resolve => { timeout = window.setTimeout(resolve, 1800); }),
+      ]);
+      currentPlayer.current = { x: destination.x, y: destination.y };
+    } catch { /* Navigation must work even when animation fails. */ }
+    finally {
+      if (footstep !== null) window.clearInterval(footstep);
+      window.clearTimeout(timeout);
+      playerControls.stop();
+      setTrail(null); setArrival(null); setFocus(null); setMoving(false); setTransitioning(false);
+      navigate();
     }
-    document
-      .querySelector(destination.href)
-      ?.scrollIntoView({ behavior: 'smooth' });
-    await wait(500);
-    setTransitioning(false);
-    setArrival(null);
-    setFocus(null);
-    setMoving(false);
   }
 
   function trackPointer(event: PointerEvent<HTMLDivElement>) {
@@ -273,6 +252,7 @@ function AtlasNavigation() {
         pointerY.set(0);
       }}
     >
+      {started && <h1 className="sr-only" id="hero-title">Piyush Bhandari — {tagline}</h1>}
       <motion.div
         className="world-camera"
         animate={{
@@ -318,13 +298,13 @@ function AtlasNavigation() {
         {!started && (
           <motion.div
             className="start-screen"
-            initial={{ opacity: 1 }}
+            initial={false}
             exit={{ opacity: 0, scale: 1.08, filter: 'blur(16px)' }}
             transition={{ duration: 0.72, ease: cinematicEase }}
           >
             <motion.p
               className="game-overline"
-              initial={{ opacity: 0, y: -14 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
             >
@@ -332,7 +312,7 @@ function AtlasNavigation() {
             </motion.p>
             <motion.h1
               id="hero-title"
-              initial="hidden"
+              initial={false}
               animate="visible"
               variants={revealGroup}
             >
@@ -340,15 +320,15 @@ function AtlasNavigation() {
               <motion.em variants={revealItem}>Bhandari</motion.em>
             </motion.h1>
             <motion.p
-              initial={{ opacity: 0 }}
+              initial={false}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.55 }}
             >
-              About Me
+              {tagline}
             </motion.p>
             <motion.div
               className="play-cta"
-              initial={{ opacity: 0, scale: 0.82 }}
+              initial={false}
               animate={{ opacity: 1, scale: 1 }}
               transition={{
                 delay: 0.7,
@@ -357,15 +337,13 @@ function AtlasNavigation() {
                 damping: 16,
               }}
             >
-              <span className="click-here-sign" aria-hidden="true">
-                Click here! <span>↘</span>
-              </span>
               <button className="play-button" onClick={begin}>
-                <span>Play</span>
+                <span>Explore my world</span>
                 <Gamepad2 size={18} aria-hidden="true" />
               </button>
+              <a className="apps-cta" href="#work">View apps <ArrowDown size={18} aria-hidden="true" /></a>
             </motion.div>
-            <small>Or scroll to explore the accessible portfolio</small>
+            <small>Product leadership. Engineering roots. Things I build.</small>
           </motion.div>
         )}
       </AnimatePresence>
@@ -373,7 +351,7 @@ function AtlasNavigation() {
         {started && (
           <motion.div
             className="world-interface"
-            initial="hidden"
+            initial={false}
             animate="visible"
             variants={revealGroup}
           >
@@ -410,7 +388,7 @@ function AtlasNavigation() {
                   <motion.path
                     key={trail}
                     d={trail}
-                    initial={{ pathLength: 0, opacity: 0 }}
+                    initial={false}
                     animate={{ pathLength: 1, opacity: 0.8 }}
                     exit={{ opacity: 0 }}
                     transition={{
@@ -423,7 +401,7 @@ function AtlasNavigation() {
             </svg>
             <motion.div
               className={moving ? 'player-marker is-moving' : 'player-marker'}
-              initial={{ left: '48.25%', top: '45%', opacity: 0, scale: 0.4 }}
+              initial={false}
               animate={playerControls}
               variants={revealItem}
               aria-hidden="true"
@@ -435,7 +413,7 @@ function AtlasNavigation() {
                 <motion.div
                   className="arrival-burst"
                   style={{ left: `${arrival.x}%`, top: `${arrival.y}%` }}
-                  initial={{ opacity: 0, scale: 0.2 }}
+                  initial={false}
                   animate={{ opacity: [0, 1, 0], scale: [0.2, 1, 1.8] }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.8 }}
@@ -471,12 +449,7 @@ function AtlasNavigation() {
                 );
               })}
             </div>
-            <div className="touch-controls" aria-hidden="true">
-              <span>↑</span>
-              <span>←</span>
-              <span>↓</span>
-              <span>→</span>
-            </div>
+
           </motion.div>
         )}
       </AnimatePresence>
@@ -484,7 +457,7 @@ function AtlasNavigation() {
         {transitioning && (
           <motion.div
             className="cinematic-wipe"
-            initial={{ scaleY: 0 }}
+            initial={false}
             animate={{ scaleY: [0, 1, 0] }}
             exit={{ opacity: 0 }}
             transition={{
@@ -514,7 +487,7 @@ function SectionHead({
   return (
     <motion.div
       className="section-heading"
-      initial="hidden"
+      initial={false}
       whileInView="visible"
       viewport={{ once: true, amount: 0.45 }}
       variants={revealGroup}
@@ -547,73 +520,35 @@ function ProjectGlyph({ title }: { title: string }) {
   return <Aperture size={68} strokeWidth={1.4} />;
 }
 
-function AnimatedProjectCard({
-  project,
-  index,
-}: {
-  project: Project;
-  index: number;
-}) {
-  const reducedMotion = useReducedMotion();
-  const baseX = useMotionValue(0);
-  const baseY = useMotionValue(0);
-  const rotateX = useSpring(baseX, { stiffness: 220, damping: 24 });
-  const rotateY = useSpring(baseY, { stiffness: 220, damping: 24 });
-  const destination = project.liveUrl || project.repoUrl;
-  function tilt(event: PointerEvent<HTMLElement>) {
-    if (reducedMotion || event.pointerType === 'touch') return;
-    const bounds = event.currentTarget.getBoundingClientRect();
-    baseY.set(((event.clientX - bounds.left) / bounds.width - 0.5) * 5);
-    baseX.set(-((event.clientY - bounds.top) / bounds.height - 0.5) * 5);
-  }
-  return (
-    <motion.article
-      className="project-card"
-      style={{ rotateX, rotateY, transformPerspective: 900 }}
-      initial={{
-        opacity: 0,
-        y: 56,
-        clipPath: index % 2 ? 'inset(0 0 100% 0)' : 'inset(100% 0 0 0)',
-      }}
-      whileInView={{ opacity: 1, y: 0, clipPath: 'inset(0 0 0% 0)' }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.82, delay: index * 0.08, ease: cinematicEase }}
-      onPointerMove={tilt}
-      onPointerLeave={() => {
-        baseX.set(0);
-        baseY.set(0);
-      }}
-    >
-      <div className={`project-visual visual-${index % 4}`}>
-        <span className="project-glyph">
-          <ProjectGlyph title={project.title} />
-        </span>
-        <span>0{index + 1}</span>
-      </div>
-      <div className="project-copy">
-        <div className="card-meta">
-          <span>{project.tags.split(',')[0]}</span>
-          <span>BUILD / {String(project.sortOrder).padStart(2, '0')}</span>
-        </div>
-        <h3>{project.title}</h3>
-        <p>{project.summary}</p>
-        <div className="tags">
-          {project.tags.split(',').map((tag) => (
-            <span key={tag}>{tag.trim()}</span>
-          ))}
-        </div>
-        {destination && (
-          <a href={destination} target="_blank" rel="noreferrer">
-            {project.liveUrl ? 'Open live app' : 'View on GitHub'}{' '}
-            <ArrowUpRight size={16} />
-          </a>
-        )}
-      </div>
-    </motion.article>
-  );
+function ProjectPreview({ project }: { project: Project }) {
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  const source = project.imageKey
+    ? (project.imageKey.startsWith('/projects/') ? project.imageKey : `/api/files/${project.imageKey.split('/').map(encodeURIComponent).join('/')}`)
+    : null;
+  return <div className={`project-preview ${source && failedSource !== source ? 'has-preview' : ''}`}>
+    {source && failedSource !== source
+      ? <img src={source} alt={`${project.title} app preview`} width={1440} height={900} loading="lazy" onError={() => setFailedSource(source)} />
+      : <div className="project-preview-fallback"><ProjectGlyph title={project.title} /><span>{project.title}</span></div>}
+  </div>;
 }
 
-export function PortfolioExperience({ data }: { data: SiteData }) {
+function ProjectCard({ project }: { project: Project }) {
+  return <article className="project-card">
+    <ProjectPreview project={project} />
+    <div className="project-copy">
+      <div className="card-meta"><span>{project.archived ? 'Archived project' : 'Featured build'}</span></div>
+      <h3>{project.title}</h3>
+      <p>{project.summary}</p>
+      <div className="tags">{project.tags.split(',').filter(Boolean).map(tag => <span key={tag}>{tag.trim()}</span>)}</div>
+      <div className="project-actions">
+        {project.liveUrl && <a href={project.liveUrl} target="_blank" rel="noreferrer">Open live app <ArrowUpRight size={16} aria-hidden="true" /></a>}
+        {project.repoUrl && <a href={project.repoUrl} target="_blank" rel="noreferrer">View source <GitBranch size={16} aria-hidden="true" /></a>}
+      </div>
+    </div>
+  </article>;
+}
+
+export function PortfolioExperience({ data }: { data: PublicSiteData }) {
   const { profile, projects, publications } = data;
   const [activeSection, setActiveSection] = useState('top');
   const { scrollYProgress } = useScroll();
@@ -622,24 +557,18 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
     damping: 28,
     restDelta: 0.001,
   });
-  const aboutCopy = profile.longBio
-    .replace(', cloud resilience roadmaps', '')
-    .replace(', and cost transformations', '')
-    .replace('Before consulting', '\n\nPrior to consulting');
+  const aboutCopy = profile.longBio;
+  const publishedProjects = projects.filter(project => project.published).sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
   useEffect(() => {
-    const sections = ['top', 'about', 'work', 'research', 'contact']
-      .map((id) => document.getElementById(id))
-      .filter(Boolean) as HTMLElement[];
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (visible) setActiveSection(visible.target.id);
-      },
-      { rootMargin: '-25% 0px -55%', threshold: [0, 0.2, 0.5] },
-    );
-    sections.forEach((section) => observer.observe(section));
+    const sections = ['top', 'work', 'about', 'research', 'contact']
+      .map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+    const updateSection = () => {
+      const position = window.scrollY + (document.querySelector('.topbar')?.getBoundingClientRect().height ?? 136) + 24;
+      setActiveSection([...sections].reverse().find(section => section.offsetTop <= position)?.id ?? 'top');
+    };
+    updateSection();
+    window.addEventListener('scroll', updateSection, { passive: true });
+    window.addEventListener('resize', updateSection);
     const visibility = () =>
       document.documentElement.classList.toggle(
         'motion-paused',
@@ -647,7 +576,8 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
       );
     document.addEventListener('visibilitychange', visibility);
     return () => {
-      observer.disconnect();
+      window.removeEventListener('scroll', updateSection);
+      window.removeEventListener('resize', updateSection);
       document.removeEventListener('visibilitychange', visibility);
       document.documentElement.classList.remove('motion-paused');
     };
@@ -660,8 +590,8 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
         style={{ scaleX: progress }}
         aria-hidden="true"
       />
-      <a className="skip-link" href="#about">
-        Skip to profile
+      <a className="skip-link" href="#work">
+        Skip to apps
       </a>
       <section className="atlas-hero" id="top" aria-labelledby="hero-title">
         <nav className="topbar" aria-label="Primary navigation">
@@ -669,6 +599,12 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
             PB
           </a>
           <div className="nav-links">
+            <a
+              className={activeSection === 'work' ? 'active' : ''}
+              href="#work"
+            >
+              Apps
+            </a>
             <a
               className={activeSection === 'about' ? 'active' : ''}
               href="#about"
@@ -681,38 +617,65 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
               </a>
             )}
             <a
-              className={activeSection === 'work' ? 'active' : ''}
-              href="#work"
-            >
-              GitHub
-            </a>
-            <a
               className={activeSection === 'research' ? 'active' : ''}
               href="#research"
             >
               Publications
             </a>
+            <a href="#contact" className={activeSection === 'contact' ? 'active' : ''}>Contact</a>
           </div>
         </nav>
-        <AtlasNavigation />
-        <a className="world-scroll" href="#about">
-          <span>Continue to portfolio</span>
+        <AtlasNavigation tagline={profile.tagline} />
+        <a className="world-scroll" href="#work">
+          <span>Explore the apps</span>
           <ArrowDown size={16} aria-hidden="true" />
         </a>
       </section>
+      <section className="content-section dark-section" id="work">
+        <SectionHead
+          dark
+          number="01 / APPS"
+          place="The Workshop"
+          title="Portfolio of Apps"
+        />
+        <p className="work-intro">Tools I build, ideas I test, and the code behind them.</p>
+        <div className="project-grid">
+          {publishedProjects.filter(project => project.featured).map(project => <ProjectCard project={project} key={project.id} />)}
+        </div>
+        {publishedProjects.some(project => !project.featured) && <div className="repository-section">
+          <h3>More code & experiments</h3>
+          <div className="repository-list">
+            {publishedProjects.filter(project => !project.featured).map(project => <article className="repository-row" key={project.id}>
+              <div><h4>{project.title} {project.archived && <span className="archive-badge">Archived</span>}</h4><p>{project.summary}</p><span className="repository-tags">{project.tags}</span></div>
+              {project.repoUrl && <a href={project.repoUrl} target="_blank" rel="noreferrer" aria-label={`View ${project.title} source on GitHub`}><GitBranch size={18} aria-hidden="true" /><span>Source</span><ArrowUpRight size={16} aria-hidden="true" /></a>}
+            </article>)}
+          </div>
+        </div>}
+        {publishedProjects.length === 0 && <p className="empty-projects">New projects are on the way. Explore my GitHub below.</p>}
+        <motion.a
+          className="section-link light"
+          href={profile.githubUrl}
+          target="_blank"
+          rel="noreferrer"
+          initial={false}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+        >
+          <GitBranch size={18} /> Explore all work on GitHub{' '}
+          <ArrowUpRight size={16} />
+        </motion.a>
+      </section>
       <section className="content-section profile-section" id="about">
-        <SectionHead number="01 / ABOUT ME" title="About Me" />
+        <SectionHead number="02 / ABOUT ME" title="About Me" />
         <motion.div
           className="profile-story profile-story-wide"
-          initial="hidden"
+          initial={false}
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
           variants={revealGroup}
         >
           {aboutCopy.split(/\n\s*\n/).map((paragraph, index) => (
             <motion.p className="lead" key={paragraph} variants={revealItem}>
-              {index === 0 &&
-                'I help businesses get the most value from the technologies they buy. '}
               {paragraph}
             </motion.p>
           ))}
@@ -739,7 +702,7 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
             <motion.article
               className="experience-row"
               key={item.years}
-              initial="hidden"
+              initial={false}
               whileInView="visible"
               viewport={{ once: true, amount: 0.45 }}
               custom={index}
@@ -757,7 +720,7 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
         </div>
         <motion.div
           className="education-grid"
-          initial="hidden"
+          initial={false}
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
           variants={revealGroup}
@@ -777,37 +740,6 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
           ))}
         </motion.div>
       </section>
-      <section className="content-section dark-section" id="work">
-        <SectionHead
-          dark
-          number="02 / GITHUB"
-          place="The Workshop"
-          title="Portfolio of Apps"
-        />
-        <div className="project-grid">
-          {projects
-            .filter((project) => project.featured)
-            .map((project, index) => (
-              <AnimatedProjectCard
-                project={project}
-                index={index}
-                key={project.id}
-              />
-            ))}
-        </div>
-        <motion.a
-          className="section-link light"
-          href={profile.githubUrl}
-          target="_blank"
-          rel="noreferrer"
-          initial={{ opacity: 0, x: -20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-        >
-          <GitBranch size={18} /> Explore all work on GitHub{' '}
-          <ArrowUpRight size={16} />
-        </motion.a>
-      </section>
       <section className="content-section research-section" id="research">
         <div className="publication-heading">
           <SectionHead
@@ -820,7 +752,7 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
             href={profile.scholarUrl}
             target="_blank"
             rel="noreferrer"
-            initial={{ opacity: 0 }}
+            initial={false}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
           >
@@ -836,7 +768,7 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
               target="_blank"
               rel="noreferrer"
               key={pub.id}
-              initial="hidden"
+              initial={false}
               whileInView="visible"
               viewport={{ once: true, amount: 0.55 }}
               variants={slideReveal}
@@ -857,7 +789,7 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
       <motion.section
         className="contact-section"
         id="contact"
-        initial="hidden"
+        initial={false}
         whileInView="visible"
         viewport={{ once: true, amount: 0.25 }}
         variants={revealGroup}
@@ -917,7 +849,7 @@ export function PortfolioExperience({ data }: { data: SiteData }) {
           PB
         </a>
         <span>© {new Date().getFullYear()} Piyush Bhandari</span>
-        <Link href="/dashboard">Owner dashboard</Link>
+        <a href="/dashboard">Owner dashboard</a>
       </footer>
     </main>
   );

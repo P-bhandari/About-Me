@@ -25,6 +25,8 @@ export const projects = sqliteTable('projects', {
   liveUrl: text('live_url'),
   imageKey: text('image_key'),
   featured: integer('featured', { mode: 'boolean' }).notNull().default(true),
+  published: integer('published', { mode: 'boolean' }).notNull().default(true),
+  archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
   sortOrder: integer('sort_order').notNull().default(0),
 });
 
@@ -74,3 +76,5 @@ export type ProjectRow = typeof projects.$inferSelect;
 export type PublicationRow = typeof publications.$inferSelect;
 export type PlaceRow = typeof places.$inferSelect;
 export type LiftEntryRow = typeof liftEntries.$inferSelect;
+
+export const contentMigrations = sqliteTable('site_content_migrations', { name: text('name').primaryKey().notNull() });
