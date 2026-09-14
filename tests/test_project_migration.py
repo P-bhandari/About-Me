@@ -8,6 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = (ROOT / 'lib/project-migration.ts').read_text()
 STATEMENTS = json.loads(SOURCE.split(' = ', 1)[1].strip().removesuffix(';'))
 
+CURATION = json.loads((ROOT / 'lib/portfolio-curation.ts').read_text().split(' = ', 1)[1].strip().removesuffix(';'))
+
 class ProjectMigrationTests(unittest.TestCase):
     def setUp(self):
         self.db = sqlite3.connect(':memory:')
@@ -56,6 +58,34 @@ class ProjectMigrationTests(unittest.TestCase):
         before = list(map(tuple, self.db.execute('SELECT * FROM projects ORDER BY id')))
         self.apply_catalog()
         self.apply_catalog()
+        self.assertEqual(before, list(map(tuple, self.db.execute('SELECT * FROM projects ORDER BY id'))))
+
+    def apply_curation(self):
+        with self.db:
+            for statement in CURATION:
+                self.db.execute(statement)
+
+    def test_requested_curation_keeps_three_features_and_four_repositories(self):
+        self.upgrade()
+        self.apply_curation()
+        featured = [r[0] for r in self.db.execute('SELECT title FROM projects WHERE published = 1 AND featured = 1 ORDER BY sort_order')]
+        self.assertEqual(featured, ['Nutrition Scanner', 'Date Night', 'Self-Taught Learning'])
+        others = [r[0] for r in self.db.execute('SELECT title FROM projects WHERE published = 1 AND featured = 0 ORDER BY sort_order')]
+        self.assertEqual(others, ['OpenCV Tutorials', 'Stereo Matching', 'Breast Profile Segmentation', 'Emotion Recognition'])
+        self.assertEqual(self.db.execute('SELECT COUNT(*) FROM projects').fetchone()[0], 12)
+        row = self.db.execute("SELECT summary, archived FROM projects WHERE title = 'Self-Taught Learning'").fetchone()
+        self.assertIn('machine learning algorithm', row['summary'])
+        self.assertEqual(row['archived'], 1)
+
+    def test_curation_reruns_preserve_subsequent_owner_edits(self):
+        self.upgrade()
+        self.apply_curation()
+        self.db.execute("UPDATE projects SET published=0, summary='My edited algorithm', sort_order=8 WHERE title='Self-Taught Learning'")
+        self.db.execute("UPDATE projects SET published=1 WHERE title='Personal Atlas'")
+        self.db.commit()
+        before = list(map(tuple, self.db.execute('SELECT * FROM projects ORDER BY id')))
+        self.apply_catalog()
+        self.apply_curation()
         self.assertEqual(before, list(map(tuple, self.db.execute('SELECT * FROM projects ORDER BY id'))))
 
     def test_failure_rolls_back_whole_catalog(self):

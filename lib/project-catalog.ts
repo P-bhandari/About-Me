@@ -36,8 +36,8 @@ export const projectCatalog: Project[] = [
     "repoUrl": "https://github.com/P-bhandari/About-Me",
     "liveUrl": null,
     "imageKey": null,
-    "featured": true,
-    "published": true,
+    "featured": false,
+    "published": false,
     "archived": false,
     "sortOrder": 3
   },
@@ -76,7 +76,7 @@ export const projectCatalog: Project[] = [
     "liveUrl": null,
     "imageKey": null,
     "featured": false,
-    "published": true,
+    "published": false,
     "archived": false,
     "sortOrder": 12
   },
@@ -115,7 +115,7 @@ export const projectCatalog: Project[] = [
     "liveUrl": null,
     "imageKey": null,
     "featured": false,
-    "published": true,
+    "published": false,
     "archived": false,
     "sortOrder": 15
   },
@@ -128,7 +128,7 @@ export const projectCatalog: Project[] = [
     "liveUrl": null,
     "imageKey": null,
     "featured": false,
-    "published": true,
+    "published": false,
     "archived": true,
     "sortOrder": 16
   },
@@ -141,21 +141,21 @@ export const projectCatalog: Project[] = [
     "liveUrl": null,
     "imageKey": null,
     "featured": false,
-    "published": true,
+    "published": false,
     "archived": true,
     "sortOrder": 17
   },
   {
     "id": 18,
     "title": "Self-Taught Learning",
-    "summary": "Matlab code for self-taught-learning using auto enchoders ",
-    "tags": "Matlab",
+    "summary": "A MATLAB implementation of a self-taught machine learning algorithm using autoencoders to learn features.",
+    "tags": "Machine learning, MATLAB, Autoencoders",
     "repoUrl": "https://github.com/P-bhandari/Self_Taught_Learning",
     "liveUrl": null,
     "imageKey": null,
-    "featured": false,
+    "featured": true,
     "published": true,
     "archived": true,
-    "sortOrder": 18
+    "sortOrder": 3
   }
 ];

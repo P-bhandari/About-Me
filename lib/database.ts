@@ -1,3 +1,4 @@
+import { portfolioCurationSql } from './portfolio-curation';
 import { projectMigrationSql } from './project-migration';
 import { toPublicProfile, type PublicSiteData } from './site-data';
 import { env } from 'cloudflare:workers';
@@ -59,6 +60,9 @@ async function initialize(db: D1Database) {
 
   const catalogApplied = await db.prepare("SELECT name FROM site_content_migrations WHERE name = 'portfolio-catalog-2026-09-14'").first();
   if (!catalogApplied) await db.batch(projectMigrationSql.map(sql => db.prepare(sql)));
+
+  const curationApplied = await db.prepare("SELECT name FROM site_content_migrations WHERE name = 'portfolio-curation-2026-09-14'").first();
+  if (!curationApplied) await db.batch(portfolioCurationSql.map(sql => db.prepare(sql)));
 
   const publicationCount = await db.prepare('SELECT COUNT(*) AS count FROM publications').first<{ count: number }>();
   if (!publicationCount?.count) {
