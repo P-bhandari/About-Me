@@ -128,7 +128,7 @@ export const projectCatalog: Project[] = [
     "liveUrl": null,
     "imageKey": null,
     "featured": false,
-    "published": false,
+    "published": true,
     "archived": true,
     "sortOrder": 16
   },

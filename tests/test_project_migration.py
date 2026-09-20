@@ -9,6 +9,7 @@ SOURCE = (ROOT / 'lib/project-migration.ts').read_text()
 STATEMENTS = json.loads(SOURCE.split(' = ', 1)[1].strip().removesuffix(';'))
 
 CURATION = json.loads((ROOT / 'lib/portfolio-curation.ts').read_text().split(' = ', 1)[1].strip().removesuffix(';'))
+VISIBILITY_CORRECTION = json.loads((ROOT / 'lib/portfolio-visibility-correction.ts').read_text().split(' = ', 1)[1].strip().removesuffix(';'))
 
 class ProjectMigrationTests(unittest.TestCase):
     def setUp(self):
@@ -65,6 +66,11 @@ class ProjectMigrationTests(unittest.TestCase):
             for statement in CURATION:
                 self.db.execute(statement)
 
+    def apply_visibility_correction(self):
+        with self.db:
+            for statement in VISIBILITY_CORRECTION:
+                self.db.execute(statement)
+
     def test_requested_curation_keeps_three_features_and_four_repositories(self):
         self.upgrade()
         self.apply_curation()
@@ -87,6 +93,15 @@ class ProjectMigrationTests(unittest.TestCase):
         self.apply_catalog()
         self.apply_curation()
         self.assertEqual(before, list(map(tuple, self.db.execute('SELECT * FROM projects ORDER BY id'))))
+
+    def test_visibility_correction_keeps_legaltech_only(self):
+        self.upgrade()
+        self.apply_curation()
+        self.apply_visibility_correction()
+        visible = [r[0] for r in self.db.execute('SELECT title FROM projects WHERE published = 1 ORDER BY sort_order')]
+        self.assertIn('LegalTech', visible)
+        self.assertNotIn('Intraday Trading Algorithms', visible)
+        self.assertNotIn('Android Mock Location', visible)
 
     def test_failure_rolls_back_whole_catalog(self):
         self.db.executescript((ROOT / 'drizzle/0001_overrated_cannonball.sql').read_text())

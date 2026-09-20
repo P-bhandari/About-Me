@@ -1,4 +1,5 @@
 import { portfolioCurationSql } from './portfolio-curation';
+import { portfolioVisibilityCorrectionSql } from './portfolio-visibility-correction';
 import { projectMigrationSql } from './project-migration';
 import { toPublicProfile, type PublicSiteData } from './site-data';
 import { env } from 'cloudflare:workers';
@@ -63,6 +64,9 @@ async function initialize(db: D1Database) {
 
   const curationApplied = await db.prepare("SELECT name FROM site_content_migrations WHERE name = 'portfolio-curation-2026-09-14'").first();
   if (!curationApplied) await db.batch(portfolioCurationSql.map(sql => db.prepare(sql)));
+
+  const visibilityCorrectionApplied = await db.prepare("SELECT name FROM site_content_migrations WHERE name = 'portfolio-visibility-correction-2026-09-20'").first();
+  if (!visibilityCorrectionApplied) await db.batch(portfolioVisibilityCorrectionSql.map(sql => db.prepare(sql)));
 
   const publicationCount = await db.prepare('SELECT COUNT(*) AS count FROM publications').first<{ count: number }>();
   if (!publicationCount?.count) {
