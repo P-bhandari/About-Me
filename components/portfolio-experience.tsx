@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import Image from 'next/image';
 import {
   AnimatePresence,
   motion,
@@ -23,6 +22,7 @@ import {
   GitBranch,
   GraduationCap,
   Mail,
+  Menu,
   Pill,
   Sparkles,
   Volume2,
@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import type { Project, PublicSiteData } from '@/lib/site-data';
 import { playCinematicSound } from '@/lib/cinematic-sound';
+import { Sheet, SheetTrigger, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import {
   cinematicEase,
   curvedTravel,
@@ -136,6 +137,14 @@ const particles = Array.from({ length: 18 }, (_, index) => ({
 
 function AtlasNavigation({ tagline }: { tagline: string }) {
   const reducedMotion = useReducedMotion();
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 759px)');
+    const update = () => setCompact(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
   const [started, setStarted] = useState(false);
   const [moving, setMoving] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
@@ -213,6 +222,7 @@ function AtlasNavigation({ tagline }: { tagline: string }) {
     setMoving(true);
     setFocus(destination);
     const route = curvedTravel(currentPlayer.current, destination);
+    const travelDuration = compact ? 0.6 : motionTiming.travel;
     setTrail(route.path);
     let footstep: number | null = null;
     let timeout: number | undefined;
@@ -220,8 +230,8 @@ function AtlasNavigation({ tagline }: { tagline: string }) {
       sound('tick');
       if (soundEnabled) footstep = window.setInterval(() => playCinematicSound('step'), 190);
       await Promise.race([
-        playerControls.start({ left: route.x, top: route.y, transition: { duration: motionTiming.travel, times: [0, 0.5, 1], ease: cinematicEase } }),
-        new Promise<void>(resolve => { timeout = window.setTimeout(resolve, 1800); }),
+        playerControls.start({ left: route.x, top: route.y, transition: { duration: travelDuration, times: [0, 0.5, 1], ease: cinematicEase } }),
+        new Promise<void>(resolve => { timeout = window.setTimeout(resolve, (travelDuration + 0.6) * 1000); }),
       ]);
       currentPlayer.current = { x: destination.x, y: destination.y };
     } catch { /* Navigation must work even when animation fails. */ }
@@ -235,7 +245,7 @@ function AtlasNavigation({ tagline }: { tagline: string }) {
   }
 
   function trackPointer(event: PointerEvent<HTMLDivElement>) {
-    if (reducedMotion || event.pointerType === 'touch') return;
+    if (reducedMotion || compact || event.pointerType === 'touch' || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     pointerX.set((event.clientX - bounds.left) / bounds.width - 0.5);
     pointerY.set((event.clientY - bounds.top) / bounds.height - 0.5);
@@ -256,16 +266,22 @@ function AtlasNavigation({ tagline }: { tagline: string }) {
       <motion.div
         className="world-camera"
         animate={{
-          x: focus?.cameraX ?? 0,
-          y: focus?.cameraY ?? 0,
-          scale: focus ? 1.025 : 1,
+          x: compact ? 0 : focus?.cameraX ?? 0,
+          y: compact ? 0 : focus?.cameraY ?? 0,
+          scale: focus && !compact ? 1.025 : 1,
         }}
         transition={{ duration: 0.85, ease: cinematicEase }}
       >
         <motion.div className="world-parallax" style={{ x: artX, y: artY }}>
           <motion.img
             className="world-art"
-            src="/pixel-world.png"
+            src="/pixel-world-1672.webp"
+            srcSet="/pixel-world-840.webp 840w, /pixel-world-1280.webp 1280w, /pixel-world-1672.webp 1672w"
+            sizes="(max-width: 759px) 100vw, 100vw"
+            width={1672}
+            height={941}
+            fetchPriority="high"
+            loading="eager"
             alt="An illustrated island containing a studio, technology workshop, library, airfield, outdoor gym, and postbox"
             animate={
               started
@@ -377,6 +393,7 @@ function AtlasNavigation({ tagline }: { tagline: string }) {
               <span className="status-dot" />{' '}
               {moving ? 'Travelling…' : 'Choose a destination'}
             </motion.div>
+            <div className="world-stage">
             <svg
               className="travel-trail"
               viewBox="0 0 100 100"
@@ -403,10 +420,10 @@ function AtlasNavigation({ tagline }: { tagline: string }) {
               className={moving ? 'player-marker is-moving' : 'player-marker'}
               initial={false}
               animate={playerControls}
-              variants={revealItem}
               aria-hidden="true"
+              style={{ left: '48.25%', top: '45%' }}
             >
-              <Image src="/player-avatar.png" alt="" width={92} height={116} />
+              <img src="/player-avatar-184.webp" srcSet="/player-avatar-92.webp 92w, /player-avatar-184.webp 184w, /player-avatar-276.webp 276w" sizes="(max-width: 759px) 80px, 92px" alt="" width={92} height={92} />
             </motion.div>
             <AnimatePresence>
               {arrival && (
@@ -423,6 +440,7 @@ function AtlasNavigation({ tagline }: { tagline: string }) {
                 </motion.div>
               )}
             </AnimatePresence>
+            </div>
             <div className="destination-menu" aria-label="World destinations">
               {atlasDestinations.map((destination, index) => {
                 const { href, label, detail, icon: Icon } = destination;
@@ -551,6 +569,8 @@ function ProjectCard({ project }: { project: Project }) {
 export function PortfolioExperience({ data }: { data: PublicSiteData }) {
   const { profile, projects, publications } = data;
   const [activeSection, setActiveSection] = useState('top');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, {
     stiffness: 120,
@@ -559,6 +579,18 @@ export function PortfolioExperience({ data }: { data: PublicSiteData }) {
   });
   const aboutCopy = profile.longBio;
   const publishedProjects = projects.filter(project => project.published).sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const update = () => document.documentElement.style.setProperty('--portfolio-header-offset', `${header.getBoundingClientRect().height + 16}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(header);
+    const query = window.matchMedia('(min-width: 760px)');
+    const closeOnDesktop = () => { if (query.matches) setMenuOpen(false); };
+    query.addEventListener('change', closeOnDesktop);
+    return () => { observer.disconnect(); query.removeEventListener('change', closeOnDesktop); document.documentElement.style.removeProperty('--portfolio-header-offset'); };
+  }, []);
   useEffect(() => {
     const sections = ['top', 'work', 'about', 'research', 'contact']
       .map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
@@ -594,7 +626,7 @@ export function PortfolioExperience({ data }: { data: PublicSiteData }) {
         Skip to apps
       </a>
       <section className="atlas-hero" id="top" aria-labelledby="hero-title">
-        <nav className="topbar" aria-label="Primary navigation">
+        <nav ref={headerRef} className="topbar" aria-label="Primary navigation">
           <a className="monogram" href="#top" aria-label="Piyush Bhandari home">
             PB
           </a>
@@ -623,6 +655,25 @@ export function PortfolioExperience({ data }: { data: PublicSiteData }) {
               Publications
             </a>
             <a href="#contact" className={activeSection === 'contact' ? 'active' : ''}>Contact</a>
+          </div>
+          <div className="mobile-navigation">
+            <a className={activeSection === 'work' ? 'active' : ''} href="#work">Apps</a>
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger className="mobile-menu-trigger"><Menu size={20} aria-hidden="true" /> Menu</SheetTrigger>
+              <SheetContent className="mobile-menu-panel" side="right">
+                <SheetTitle className="mobile-menu-title">Explore</SheetTitle>
+                <SheetDescription className="sr-only">Choose a section of Piyush’s portfolio.</SheetDescription>
+                <nav aria-label="Mobile navigation" className="mobile-menu-links">
+                  {[
+                    { href: '#work', label: 'Apps' },
+                    { href: '#about', label: 'About Me' },
+                    ...(profile.linkedinUrl ? [{ href: profile.linkedinUrl, label: 'LinkedIn' }] : []),
+                    { href: '#research', label: 'Publications' },
+                    { href: '#contact', label: 'Contact' },
+                  ].map(link => <a key={link.href} href={link.href} aria-current={link.href === `#${activeSection}` ? 'location' : undefined} onClick={() => setMenuOpen(false)} {...(link.href.startsWith('https:') ? { target: '_blank', rel: 'noreferrer' } : {})}>{link.label}<ArrowUpRight size={20} aria-hidden="true" /></a>)}
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </nav>
         <AtlasNavigation tagline={profile.tagline} />
